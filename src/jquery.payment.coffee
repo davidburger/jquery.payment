@@ -8,6 +8,16 @@ $.fn.payment = (method, args...) ->
 
 defaultFormat = /(\d{1,4})/g
 
+# Expiry date separator configuration:
+$.payment.expiryDateSep = ' / '
+$.payment.expiryDateSepNoSpace = '/'
+
+$.payment.setExpiryDateSep = (s) ->
+  $.payment.expiryDateSep = s
+  $.payment.expiryDateSepNoSpace = s.replace(/\s+/g, '')
+  $.payment
+
+
 $.payment.cards = cards = [
   # Elo has a lot of bins scattered throughout bin-space. Some are one-off, and
   # some are large ranges. We include the full one-offs here and some range
@@ -324,7 +334,7 @@ formatExpiry = (e) ->
 
   if /^\d$/.test(val) and val not in ['0', '1']
     e.preventDefault()
-    setTimeout -> $target.val("0#{val} / ")
+    setTimeout -> $target.val("0#{val}" + $.payment.expiryDateSep)
 
   else if /^\d\d$/.test(val)
     e.preventDefault()
@@ -334,9 +344,9 @@ formatExpiry = (e) ->
       m1 = parseInt(val[0], 10)
       m2 = parseInt(val[1], 10)
       if m2 > 2 and m1 != 0
-        $target.val("0#{m1} / #{m2}")
+        $target.val("0#{m1}" + $.payment.expiryDateSep + "#{m2}")
       else
-        $target.val("#{val} / ")
+        $target.val("#{val}" + $.payment.expiryDateSep)
 
 formatForwardExpiry = (e) ->
   digit = String.fromCharCode(e.which)
@@ -346,17 +356,17 @@ formatForwardExpiry = (e) ->
   val     = $target.val()
 
   if /^\d\d$/.test(val)
-    $target.val("#{val} / ")
+    $target.val("#{val}" + $.payment.expiryDateSep)
 
 formatForwardSlashAndSpace = (e) ->
   which = String.fromCharCode(e.which)
-  return unless which is '/' or which is ' '
+  return unless which is $.payment.expiryDateSepNoSpace or which is ' '
 
   $target = $(e.currentTarget)
   val     = $target.val()
 
   if /^\d$/.test(val) and val isnt '0'
-    $target.val("0#{val} / ")
+    $target.val("0#{val}" + $.payment.expiryDateSep)
 
 formatBackExpiry = (e) ->
   $target = $(e.currentTarget)
@@ -369,10 +379,12 @@ formatBackExpiry = (e) ->
   return if $target.prop('selectionStart')? and
     $target.prop('selectionStart') isnt value.length
 
+  regex = new RegExp('\\d\\s' + $.payment.expiryDateSepNoSpace + '\\s')
+
   # Remove the trailing space + last digit
-  if /\d\s\/\s$/.test(value)
+  if regex.test(value)
     e.preventDefault()
-    setTimeout -> $target.val(value.replace(/\d\s\/\s$/, ''))
+    setTimeout -> $target.val(value.replace(regex, ''))
 
 # Format CVC
 
@@ -508,7 +520,7 @@ $.payment.fn.cardExpiryVal = ->
   $.payment.cardExpiryVal($(this).val())
 
 $.payment.cardExpiryVal = (value) ->
-  [month, year] = value.split(/[\s\/]+/, 2)
+  [month, year] = value.split(new RegExp('[\\s' + $.payment.expiryDateSepNoSpace + ']+'), 2)
 
   # Allow for year shortcut
   if year?.length is 2 and /^\d+$/.test(year)
@@ -608,17 +620,17 @@ $.payment.formatExpiry = (expiry) ->
   year = parts[3] || ''
 
   if year.length > 0
-    sep = ' / '
+    sep = $.payment.expiryDateSep
 
-  else if sep is ' /'
+  else if sep is (' ' + $.payment.expiryDateSepNoSpace)
     mon = mon.substring(0, 1)
     sep = ''
 
   else if mon.length == 2 or sep.length > 0
-    sep = ' / '
+    sep = $.payment.expiryDateSep
 
   else if mon.length == 1 and mon not in ['0', '1']
     mon = "0#{mon}"
-    sep = ' / '
+    sep = $.payment.expiryDateSep
 
   return mon + sep + year
