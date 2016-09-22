@@ -316,6 +316,22 @@ formatBackCardNumber = (e) ->
 
 # Format Expiry
 
+reFormatExpiryMonth = (e) ->
+  $target = $(e.currentTarget)
+  setTimeout ->
+    value   = $target.val()
+    value   = replaceFullWidthChars(value)
+    value   = $.payment.formatExpiryMonth(value)
+    safeVal(value, $target)
+
+reFormatExpiryYear = (e) ->
+  $target = $(e.currentTarget)
+  setTimeout ->
+    value   = $target.val()
+    value   = replaceFullWidthChars(value)
+    value   = $.payment.formatExpiryYear(value)
+    safeVal(value, $target)
+
 reFormatExpiry = (e) ->
   $target = $(e.currentTarget)
   setTimeout ->
@@ -348,6 +364,38 @@ formatExpiry = (e) ->
       else
         $target.val("#{val}" + $.payment.expiryDateSep)
 
+formatExpiryMonth = (e) ->
+# Only format if input is a number
+  digit = String.fromCharCode(e.which)
+  return unless /^\d+$/.test(digit)
+
+  $target = $(e.currentTarget)
+  val     = $target.val() + digit
+
+  if /^\d$/.test(val) and val not in ['0', '1']
+    e.preventDefault()
+    setTimeout -> $target.val("0#{val}")
+
+  else if /^\d\d$/.test(val)
+    e.preventDefault()
+    setTimeout -> $target.val("#{val}")
+
+
+formatExpiryYear = (e) ->
+# Only format if input is a number
+  digit = String.fromCharCode(e.which)
+  return unless /^\d+$/.test(digit)
+
+  $target = $(e.currentTarget)
+  val     = $target.val() + digit
+
+
+  if /^\d\d$/.test(val)
+    e.preventDefault()
+    setTimeout -> $target.val("#{val}")
+
+
+
 formatForwardExpiry = (e) ->
   digit = String.fromCharCode(e.which)
   return unless /^\d+$/.test(digit)
@@ -357,6 +405,29 @@ formatForwardExpiry = (e) ->
 
   if /^\d\d$/.test(val)
     $target.val("#{val}" + $.payment.expiryDateSep)
+
+
+formatForwardExpiryMonth = (e) ->
+  digit = String.fromCharCode(e.which)
+  return unless /^\d+$/.test(digit)
+
+  $target = $(e.currentTarget)
+  val     = $target.val()
+
+  if /^\d\d$/.test(val)
+    $target.val("#{val}")
+
+
+formatForwardExpiryYear = (e) ->
+  digit = String.fromCharCode(e.which)
+  return unless /^\d+$/.test(digit)
+
+  $target = $(e.currentTarget)
+  val     = $target.val()
+
+  if /^\d\d$/.test(val)
+    $target.val("#{val}")
+
 
 formatForwardSlashAndSpace = (e) ->
   which = String.fromCharCode(e.which)
@@ -385,6 +456,7 @@ formatBackExpiry = (e) ->
   if regex.test(value)
     e.preventDefault()
     setTimeout -> $target.val(value.replace(regex, ''))
+
 
 # Format CVC
 
@@ -445,6 +517,33 @@ restrictExpiry = (e) ->
 
   return false if value.length > 6
 
+
+restrictExpiryMonth = (e) ->
+  $target = $(e.currentTarget)
+  digit   = String.fromCharCode(e.which)
+  return unless /^\d+$/.test(digit)
+
+  return if hasTextSelected($target)
+
+  value = $target.val() + digit
+  value = value.replace(/\D/g, '')
+
+  return false if value.length > 2
+
+
+restrictExpiryYear = (e) ->
+  $target = $(e.currentTarget)
+  digit   = String.fromCharCode(e.which)
+  return unless /^\d+$/.test(digit)
+
+  return if hasTextSelected($target)
+
+  value = $target.val() + digit
+  value = value.replace(/\D/g, '')
+
+  return false if value.length > 4
+
+
 restrictCVC = (e) ->
   $target = $(e.currentTarget)
   digit   = String.fromCharCode(e.which)
@@ -493,6 +592,24 @@ $.payment.fn.formatCardExpiry = ->
   @on('input', reFormatExpiry)
   this
 
+$.payment.fn.formatCardExpiryMonth = ->
+  @on('keypress', restrictNumeric)
+  @on('keypress', restrictExpiryMonth)
+  @on('keypress', formatExpiryMonth)
+  @on('keypress', formatForwardExpiryMonth)
+  @on('change', reFormatExpiryMonth)
+  @on('input', reFormatExpiryMonth)
+  this
+
+$.payment.fn.formatCardExpiryYear = ->
+  @on('keypress', restrictNumeric)
+  @on('keypress', restrictExpiryYear)
+  @on('keypress', formatExpiryYear)
+  @on('keypress', formatForwardExpiryYear)
+  @on('change', reFormatExpiryYear)
+  @on('input', reFormatExpiryYear)
+  this
+
 $.payment.fn.formatCardNumber = ->
   @on('keypress', restrictNumeric)
   @on('keypress', restrictCardNumber)
@@ -533,6 +650,7 @@ $.payment.cardExpiryVal = (value) ->
 
   month: month, year: year
 
+
 $.payment.validateCardNumber = (num) ->
   num = (num + '').replace(/\s+|-/g, '')
   return false unless /^\d+$/.test(num)
@@ -542,6 +660,22 @@ $.payment.validateCardNumber = (num) ->
 
   num.length in card.length and
     (card.luhn is false or luhnCheck(num))
+
+
+$.payment.validateCardExpiryMonth = (month) ->
+# Allow passing an object
+  if typeof month is 'object' and 'month' of month
+    {month} = month
+
+  return false unless month
+
+  month = $.trim(month)
+
+  return false unless /^\d+$/.test(month)
+  return false unless 1 <= month <= 12
+
+  return true
+
 
 $.payment.validateCardExpiry = (month, year) ->
   # Allow passing an object
@@ -577,6 +711,31 @@ $.payment.validateCardExpiry = (month, year) ->
   expiry.setMonth(expiry.getMonth() + 1, 1)
 
   expiry > currentTime
+
+
+$.payment.validateCardExpiryYear = (year) ->
+# Allow passing an object
+
+  return false unless year
+
+  year  = $.trim(year)
+
+  return false unless /^\d+$/.test(year)
+
+  if year.length == 2
+    if year < 70
+      year = "20#{year}"
+    else
+      year = "19#{year}"
+
+  return false unless year.length == 4
+
+  expiry      = new Date(year)
+  currentTime = new Date
+  currentYear = new Date(currentTime.getFullYear() + "")
+
+  expiry >= currentYear
+
 
 $.payment.validateCardCVC = (cvc, type) ->
   cvc = $.trim(cvc)
@@ -634,3 +793,13 @@ $.payment.formatExpiry = (expiry) ->
     sep = $.payment.expiryDateSep
 
   return mon + sep + year
+
+
+$.payment.formatExpiryMonth = (mon) ->
+  if mon.length == 1 and mon not in ['0', '1']
+    mon = "0#{mon}"
+
+  return mon
+
+$.payment.formatExpiryYear = (year) ->
+  return year

@@ -1,6 +1,9 @@
 # jQuery.payment [![Build Status](https://travis-ci.org/stripe/jquery.payment.svg?branch=master)](https://travis-ci.org/stripe/jquery.payment)
 
-A general purpose library for building credit card forms, validating inputs and formatting numbers.
+A general purpose library for building credit card forms, validating inputs and formatting numbers. 
+It's fork of the original stripe library with new features implemented:
+* possibility to use divided expiry date month and year form fields
+* option to change the default expiry date separator ' / ' to something else
 
 ## Project status
 
@@ -11,6 +14,18 @@ We consider `jQuery.payment` to be feature complete. We continue to use it in pr
 The library was born in a different age, and we think it has served tremendously, but it is fundamentally doing too many things. Complecting DOM element manipulation, input masking, card formatting, and cursor positioning makes it difficult to test and modify. An ideal version of this library would separate the independent components and make the internal logic functional.
 
 ## Usage
+Default expiry date separator (' / ') change
+```javascript
+$.payment.setExpiryDateSep('/');
+$('#card-expiration').payment('formatCardExpiry');
+```
+
+Usage of two form input fields for expirary date:
+```javascript
+$('#card-month').payment('formatCardExpiryMonth');
+$('#card-year').payment('formatCardExpiryYear');
+```
+
 
 You can make an input act like a credit card field (with number formatting and length restriction):
 

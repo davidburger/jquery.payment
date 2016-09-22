@@ -1,6 +1,6 @@
 {
   "name": "davidburger.jquery.payment",
-  "version": "1.4.3",
+  "version": "1.5.0",
   "description": "A general purpose library for building credit card forms, validating inputs and formatting numbers.",
   "keywords": [
     "payment",
