@@ -172,13 +172,14 @@ luhnCheck = (num) ->
   sum % 10 == 0
 
 hasTextSelected = ($target) ->
-  # If some text is selected
-  return true if $target.prop('selectionStart')? and
-    $target.prop('selectionStart') isnt $target.prop('selectionEnd')
+  unless $target.attr('type') == 'number'
+    # If some text is selected
+    return true if $target.prop('selectionStart')? and
+      $target.prop('selectionStart') isnt $target.prop('selectionEnd')
 
-  # If some text is selected in IE
-  if document?.selection?.createRange?
-    return true if document.selection.createRange().text
+      # If some text is selected in IE
+      if document?.selection?.createRange?
+        return true if document.selection.createRange().text
 
   false
 
